@@ -1,3 +1,4 @@
+
 // User related types
 export interface User {
   id: string;
@@ -47,8 +48,8 @@ export interface FeedingLogForDate {
 // Form related types
 export interface GoatFormData {
   tag: string;
-  weight: number | '';
-  age: number | '';
+  weight: number | string;
+  age: number | string;
   gender: GoatGender;
   status: GoatStatus;
   barn: BarnType;
