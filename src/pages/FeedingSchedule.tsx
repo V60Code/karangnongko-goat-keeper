@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { Dialog } from '@/components/ui/dialog';
@@ -18,10 +17,11 @@ const FeedingSchedule: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedLog, setSelectedLog] = useState<FeedingLog | null>(null);
+  const userBarn = user?.barn as BarnType || 'barat';
   const [formData, setFormData] = useState<FeedingLogFormData>({
     date: format(new Date(), 'yyyy-MM-dd'),
     feed_time: '',
-    barn: user?.role === 'admin' ? 'barat' : (user?.barn as BarnType) || 'barat',
+    barn: user?.role === 'admin' ? 'barat' : userBarn,
     note: ''
   });
 
@@ -107,7 +107,7 @@ const FeedingSchedule: React.FC = () => {
     setFormData({
       date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       feed_time: '',
-      barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat',
+      barn: user?.role === 'admin' ? 'barat' : userBarn,
       note: ''
     });
     setSelectedLog(null);

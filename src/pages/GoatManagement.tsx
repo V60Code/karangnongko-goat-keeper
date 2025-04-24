@@ -22,7 +22,7 @@ const GoatManagement: React.FC = () => {
     age: '',
     gender: 'male',
     status: 'healthy',
-    barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat'
+    barn: user?.role === 'admin' ? 'barat' : (user?.barn as BarnType) || 'barat'
   });
 
   useEffect(() => {
@@ -91,8 +91,8 @@ const GoatManagement: React.FC = () => {
     if (selectedGoat) {
       setFormData({
         tag: selectedGoat.tag,
-        weight: String(selectedGoat.weight),
-        age: String(selectedGoat.age),
+        weight: selectedGoat.weight as unknown as "",
+        age: selectedGoat.age as unknown as "",
         gender: selectedGoat.gender,
         status: selectedGoat.status,
         barn: selectedGoat.barn
