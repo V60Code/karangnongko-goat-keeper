@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { goatService } from '../services/api';
 import { GoatStats } from '../types';
+import { toast } from "sonner";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +19,14 @@ const Dashboard: React.FC = () => {
         setStats(data);
       } catch (error) {
         console.error('Failed to fetch goat statistics:', error);
+        toast.error('Failed to load statistics. Using demo data.');
+        
+        // If API fails, use mock data for demo purposes
+        setStats({
+          total: 15,
+          barat: 8,
+          timur: 7
+        });
       } finally {
         setLoading(false);
       }
