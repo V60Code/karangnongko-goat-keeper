@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { toast } from "sonner";
 
@@ -44,6 +43,20 @@ api.interceptors.response.use(
   }
 );
 
+// Helper function for mock login - outside of the service object to avoid 'this' binding issues
+const createMockLoginData = (username: string) => {
+  const mockUserData = {
+    token: 'mock-jwt-token',
+    user: {
+      id: username === 'admin' ? '1' : username === 'barat' ? '2' : '3',
+      username: username,
+      role: username === 'admin' ? 'admin' : 'user',
+      barn: username === 'admin' ? null : username === 'barat' ? 'barat' : 'timur'
+    }
+  };
+  return mockUserData;
+};
+
 // Authentication service
 export const authService = {
   // Login method
@@ -57,15 +70,7 @@ export const authService = {
         (username === 'timur' && password === 'user123')
       ) {
         // Mock successful login response
-        const mockUserData = {
-          token: 'mock-jwt-token',
-          user: {
-            id: username === 'admin' ? '1' : username === 'barat' ? '2' : '3',
-            username: username,
-            role: username === 'admin' ? 'admin' : 'user',
-            barn: username === 'admin' ? null : username === 'barat' ? 'barat' : 'timur'
-          }
-        };
+        const mockUserData = createMockLoginData(username);
         
         // Store mock token and user data in localStorage
         localStorage.setItem('token', mockUserData.token);
@@ -93,7 +98,10 @@ export const authService = {
             (username === 'timur' && password === 'user123')
           ) {
             // Valid credentials but API is down - use mock data
-            return this.login(username, password); // Recursive call to use the mock login
+            const mockUserData = createMockLoginData(username);
+            localStorage.setItem('token', mockUserData.token);
+            localStorage.setItem('user', JSON.stringify(mockUserData.user));
+            return mockUserData;
           }
         }
         
