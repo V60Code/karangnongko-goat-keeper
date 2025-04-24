@@ -32,10 +32,16 @@ const Login: React.FC = () => {
     
     try {
       await login(username, password);
-      navigate('/dashboard');
-    } catch (err) {
+      // Navigation is handled in the auth context after successful login
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Invalid username or password');
+      
+      if (err.code === 'ERR_NETWORK') {
+        setError('Unable to connect to the server. Using demo mode.');
+        // The auth service will handle demo login now
+      } else {
+        setError('Invalid username or password');
+      }
     } finally {
       setIsSubmitting(false);
     }
