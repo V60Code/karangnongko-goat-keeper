@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,15 +5,6 @@ import { toast } from "sonner";
 import { goatService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Goat, GoatFormData, GoatGender, GoatStatus, BarnType } from '../types';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 const GoatManagement: React.FC = () => {
   const { user } = useAuth();
@@ -25,8 +15,6 @@ const GoatManagement: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [filterBarn, setFilterBarn] = useState<BarnType | 'all'>('all');
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState<GoatFormData>({
     tag: '',
@@ -37,23 +25,59 @@ const GoatManagement: React.FC = () => {
     barn: user?.role === 'admin' ? 'barat' : (user?.barn as BarnType) || 'barat'
   });
 
-  const fetchGoats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const filters = filterBarn !== 'all' ? { barn: filterBarn } : {};
-      const data = await goatService.getGoats(filters);
-      setGoats(data);
-    } catch (error) {
-      console.error('Failed to fetch goats:', error);
-      setError('Failed to load goats data');
-      toast.error('Failed to load goats. Using demo data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchGoats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const filters = filterBarn !== 'all' ? { barn: filterBarn } : {};
+        const data = await goatService.getGoats(filters);
+        setGoats(data);
+      } catch (error) {
+        console.error('Failed to fetch goats:', error);
+        setError('Failed to load goats data');
+        toast.error('Failed to load goats. Using demo data.');
+        
+        const mockGoats: Goat[] = [
+          {
+            id: '1',
+            tag: 'G001',
+            weight: 45,
+            age: 24,
+            gender: 'male',
+            status: 'healthy',
+            barn: 'barat'
+          },
+          {
+            id: '2',
+            tag: 'G002',
+            weight: 38,
+            age: 18,
+            gender: 'female',
+            status: 'healthy',
+            barn: 'barat'
+          },
+          {
+            id: '3',
+            tag: 'G003',
+            weight: 42,
+            age: 30,
+            gender: 'male',
+            status: 'sick',
+            barn: 'timur'
+          }
+        ];
+        
+        const filteredGoats = filterBarn !== 'all' 
+          ? mockGoats.filter(goat => goat.barn === filterBarn)
+          : mockGoats;
+          
+        setGoats(filteredGoats);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchGoats();
   }, [filterBarn]);
 
@@ -67,8 +91,8 @@ const GoatManagement: React.FC = () => {
     if (selectedGoat) {
       setFormData({
         tag: selectedGoat.tag,
-        weight: selectedGoat.weight,
-        age: selectedGoat.age,
+        weight: selectedGoat.weight as unknown as "",
+        age: selectedGoat.age as unknown as "",
         gender: selectedGoat.gender,
         status: selectedGoat.status,
         barn: selectedGoat.barn
@@ -84,7 +108,7 @@ const GoatManagement: React.FC = () => {
       age: '',
       gender: 'male',
       status: 'healthy',
-      barn: user?.role === 'admin' ? 'barat' : (user?.barn as BarnType) || 'barat'
+      barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat'
     });
     setSelectedGoat(null);
   };
@@ -115,8 +139,6 @@ const GoatManagement: React.FC = () => {
     e.preventDefault();
     
     try {
-      setIsSubmitting(true);
-      
       if (!formData.tag || formData.weight === '' || formData.age === '') {
         toast.error('Please fill all required fields');
         return;
@@ -129,15 +151,13 @@ const GoatManagement: React.FC = () => {
       };
       
       if (selectedGoat) {
-        // Update existing goat
-        const updatedGoat = await goatService.updateGoat(selectedGoat.id, goatData);
+        await goatService.updateGoat(selectedGoat.id, goatData);
         toast.success('Goat updated successfully');
         
         setGoats(goats.map(goat => 
-          goat.id === selectedGoat.id ? { ...updatedGoat } : goat
+          goat.id === selectedGoat.id ? { ...goat, ...goatData } : goat
         ));
       } else {
-        // Create new goat
         const newGoat = await goatService.createGoat(goatData);
         toast.success('New goat added successfully');
         
@@ -149,8 +169,6 @@ const GoatManagement: React.FC = () => {
     } catch (error) {
       console.error('Failed to save goat:', error);
       toast.error('Failed to save goat data');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -158,7 +176,6 @@ const GoatManagement: React.FC = () => {
     if (!selectedGoat) return;
     
     try {
-      setIsDeleting(true);
       await goatService.deleteGoat(selectedGoat.id);
       toast.success('Goat deleted successfully');
       
@@ -168,8 +185,6 @@ const GoatManagement: React.FC = () => {
     } catch (error) {
       console.error('Failed to delete goat:', error);
       toast.error('Failed to delete goat');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -188,7 +203,7 @@ const GoatManagement: React.FC = () => {
 
   const canManageBarn = (barnName: string) => {
     if (user?.role === 'admin') return true;
-    return user?.barn === barnName;
+    return user?.role === barnName;
   };
 
   return (
@@ -203,7 +218,7 @@ const GoatManagement: React.FC = () => {
         <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
           <select
             value={filterBarn}
-            onChange={handleFilterChange}
+            onChange={(e) => setFilterBarn(e.target.value as BarnType | 'all')}
             className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-farm-primary focus:border-farm-primary"
           >
             <option value="all">All Barns</option>
@@ -212,7 +227,7 @@ const GoatManagement: React.FC = () => {
           </select>
           
           <Button 
-            onClick={handleAddGoat}
+            onClick={() => setIsDialogOpen(true)}
             className="bg-farm-primary hover:bg-opacity-90"
           >
             Add Goat
@@ -241,7 +256,7 @@ const GoatManagement: React.FC = () => {
               : 'Add your first goat to get started.'}
           </p>
           <Button
-            onClick={handleAddGoat}
+            onClick={() => setIsDialogOpen(true)}
             className="mt-4 bg-farm-primary hover:bg-opacity-90"
           >
             Add Your First Goat
@@ -250,34 +265,56 @@ const GoatManagement: React.FC = () => {
       ) : (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tag ID</TableHead>
-                  <TableHead>Weight (kg)</TableHead>
-                  <TableHead>Age</TableHead>
-                  <TableHead>Gender</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Barn</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tag ID
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Weight (kg)
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Age
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Gender
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Barn
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
                 {goats.map((goat) => (
-                  <TableRow key={goat.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{goat.tag}</TableCell>
-                    <TableCell>{goat.weight}</TableCell>
-                    <TableCell>{goat.age}</TableCell>
-                    <TableCell className="capitalize">{goat.gender}</TableCell>
-                    <TableCell>
+                  <tr key={goat.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {goat.tag}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {goat.weight}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {goat.age}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                      {goat.gender}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className={getStatusBadgeClass(goat.status)}>
                         {goat.status}
                       </span>
-                    </TableCell>
-                    <TableCell className="capitalize">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                       {goat.barn === 'barat' ? 'Western (Barat)' : 'Eastern (Timur)'}
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       {canManageBarn(goat.barn) && (
                         <div className="flex justify-end gap-2">
                           <button
@@ -294,11 +331,11 @@ const GoatManagement: React.FC = () => {
                           </button>
                         </div>
                       )}
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -444,9 +481,8 @@ const GoatManagement: React.FC = () => {
                 <Button 
                   type="submit"
                   className="bg-farm-primary hover:bg-opacity-90"
-                  disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Saving...' : selectedGoat ? 'Update' : 'Add'}
+                  {selectedGoat ? 'Update' : 'Add'}
                 </Button>
               </div>
             </form>
@@ -477,9 +513,8 @@ const GoatManagement: React.FC = () => {
                 <Button 
                   onClick={handleDelete}
                   className="bg-red-600 hover:bg-red-700"
-                  disabled={isDeleting}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
+                  Delete
                 </Button>
               </div>
             </div>
