@@ -1,9 +1,9 @@
+
 // User related types
 export interface User {
   id: string;
   username: string;
-  role: 'admin' | 'user';
-  barn: 'barat' | 'timur' | null;
+  role: 'admin' | 'barat' | 'timur';
 }
 
 // Goat related types

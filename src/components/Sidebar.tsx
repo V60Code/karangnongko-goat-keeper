@@ -4,10 +4,10 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <div className="bg-sidebar h-screen w-64 fixed left-0 top-0 overflow-y-auto shadow-lg md:block hidden">
+    <div className="bg-sidebar h-screen w-64 fixed left-0 top-0 overflow-y-auto shadow-lg">
       <div className="p-6">
         <div className="flex items-center mb-8">
           <div className="text-white text-lg font-semibold">
@@ -65,19 +65,6 @@ const Sidebar: React.FC = () => {
             Feeding Schedule
           </NavLink>
         </nav>
-      </div>
-
-      {/* Logout button at bottom */}
-      <div className="absolute bottom-6 left-0 w-full px-6">
-        <button 
-          onClick={logout}
-          className="w-full flex items-center px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent bg-white bg-opacity-10"
-        >
-          <svg className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Logout
-        </button>
       </div>
     </div>
   );

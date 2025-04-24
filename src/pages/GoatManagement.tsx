@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ const GoatManagement: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [filterBarn, setFilterBarn] = useState<BarnType | 'all'>('all');
-  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<GoatFormData>({
     tag: '',
@@ -22,57 +22,20 @@ const GoatManagement: React.FC = () => {
     age: '',
     gender: 'male',
     status: 'healthy',
-    barn: user?.role === 'admin' ? 'barat' : (user?.barn as BarnType) || 'barat'
+    barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat'
   });
 
+  // Fetch goats on component mount and when filter changes
   useEffect(() => {
     const fetchGoats = async () => {
       try {
         setLoading(true);
-        setError(null);
         const filters = filterBarn !== 'all' ? { barn: filterBarn } : {};
         const data = await goatService.getGoats(filters);
         setGoats(data);
       } catch (error) {
         console.error('Failed to fetch goats:', error);
-        setError('Failed to load goats data');
-        toast.error('Failed to load goats. Using demo data.');
-        
-        const mockGoats: Goat[] = [
-          {
-            id: '1',
-            tag: 'G001',
-            weight: 45,
-            age: 24,
-            gender: 'male',
-            status: 'healthy',
-            barn: 'barat'
-          },
-          {
-            id: '2',
-            tag: 'G002',
-            weight: 38,
-            age: 18,
-            gender: 'female',
-            status: 'healthy',
-            barn: 'barat'
-          },
-          {
-            id: '3',
-            tag: 'G003',
-            weight: 42,
-            age: 30,
-            gender: 'male',
-            status: 'sick',
-            barn: 'timur'
-          }
-        ];
-        
-        const filteredGoats = filterBarn !== 'all' 
-          ? mockGoats.filter(goat => goat.barn === filterBarn)
-          : mockGoats;
-          
-        setGoats(filteredGoats);
+        toast.error('Failed to load goats data');
       } finally {
         setLoading(false);
       }
@@ -81,18 +44,20 @@ const GoatManagement: React.FC = () => {
     fetchGoats();
   }, [filterBarn]);
 
+  // Reset form data when dialog is opened/closed
   useEffect(() => {
     if (!isDialogOpen) {
       resetForm();
     }
   }, [isDialogOpen]);
 
+  // Set form data when editing a goat
   useEffect(() => {
     if (selectedGoat) {
       setFormData({
         tag: selectedGoat.tag,
-        weight: selectedGoat.weight as unknown as "",
-        age: selectedGoat.age as unknown as "",
+        weight: selectedGoat.weight,
+        age: selectedGoat.age,
         gender: selectedGoat.gender,
         status: selectedGoat.status,
         barn: selectedGoat.barn
@@ -139,6 +104,7 @@ const GoatManagement: React.FC = () => {
     e.preventDefault();
     
     try {
+      // Validate form data
       if (!formData.tag || formData.weight === '' || formData.age === '') {
         toast.error('Please fill all required fields');
         return;
@@ -151,16 +117,20 @@ const GoatManagement: React.FC = () => {
       };
       
       if (selectedGoat) {
+        // Update existing goat
         await goatService.updateGoat(selectedGoat.id, goatData);
         toast.success('Goat updated successfully');
         
+        // Update local state
         setGoats(goats.map(goat => 
           goat.id === selectedGoat.id ? { ...goat, ...goatData } : goat
         ));
       } else {
+        // Create new goat
         const newGoat = await goatService.createGoat(goatData);
         toast.success('New goat added successfully');
         
+        // Update local state
         setGoats([...goats, newGoat]);
       }
       
@@ -179,6 +149,7 @@ const GoatManagement: React.FC = () => {
       await goatService.deleteGoat(selectedGoat.id);
       toast.success('Goat deleted successfully');
       
+      // Update local state
       setGoats(goats.filter(goat => goat.id !== selectedGoat.id));
       setIsDeleteDialogOpen(false);
       resetForm();
@@ -191,16 +162,17 @@ const GoatManagement: React.FC = () => {
   const getStatusBadgeClass = (status: GoatStatus) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium';
+        return 'status-healthy';
       case 'sick':
-        return 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium';
+        return 'status-sick';
       case 'dead':
-        return 'bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium';
+        return 'status-dead';
       default:
-        return 'bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium';
+        return 'status-healthy';
     }
   };
 
+  // Determine if user can manage this barn
   const canManageBarn = (barnName: string) => {
     if (user?.role === 'admin') return true;
     return user?.role === barnName;
@@ -212,13 +184,12 @@ const GoatManagement: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-farm-dark">Goat Management</h1>
           <p className="text-gray-600 mt-1">Manage your goats inventory</p>
-          {error && <p className="text-red-500 mt-2">{error}</p>}
         </div>
         
         <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
           <select
             value={filterBarn}
-            onChange={(e) => setFilterBarn(e.target.value as BarnType | 'all')}
+            onChange={handleFilterChange}
             className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-farm-primary focus:border-farm-primary"
           >
             <option value="all">All Barns</option>
@@ -227,7 +198,7 @@ const GoatManagement: React.FC = () => {
           </select>
           
           <Button 
-            onClick={() => setIsDialogOpen(true)}
+            onClick={handleAddGoat}
             className="bg-farm-primary hover:bg-opacity-90"
           >
             Add Goat
@@ -256,7 +227,7 @@ const GoatManagement: React.FC = () => {
               : 'Add your first goat to get started.'}
           </p>
           <Button
-            onClick={() => setIsDialogOpen(true)}
+            onClick={handleAddGoat}
             className="mt-4 bg-farm-primary hover:bg-opacity-90"
           >
             Add Your First Goat
@@ -340,6 +311,7 @@ const GoatManagement: React.FC = () => {
         </div>
       )}
 
+      {/* Add/Edit Goat Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
@@ -490,6 +462,7 @@ const GoatManagement: React.FC = () => {
         </div>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">

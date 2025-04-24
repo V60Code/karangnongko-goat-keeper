@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { Dialog } from '@/components/ui/dialog';
@@ -12,16 +13,14 @@ const FeedingSchedule: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [feedingLogs, setFeedingLogs] = useState<FeedingLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedLog, setSelectedLog] = useState<FeedingLog | null>(null);
-  const userBarn = user?.barn as BarnType || 'barat';
   const [formData, setFormData] = useState<FeedingLogFormData>({
     date: format(new Date(), 'yyyy-MM-dd'),
     feed_time: '',
-    barn: user?.role === 'admin' ? 'barat' : userBarn,
+    barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat',
     note: ''
   });
 
@@ -35,46 +34,13 @@ const FeedingSchedule: React.FC = () => {
     const fetchFeedingLogs = async () => {
       try {
         setLoading(true);
-        setError(null);
         const year = format(currentMonth, 'yyyy');
         const month = format(currentMonth, 'MM');
         const data = await feedingService.getFeedingLogs({ year, month });
         setFeedingLogs(data);
       } catch (error) {
         console.error('Failed to fetch feeding logs:', error);
-        setError('Failed to load feeding schedule data');
-        toast.error('Failed to load feeding schedule. Using demo data.');
-        
-        // Generate mock data for demo purposes
-        const today = new Date();
-        const mockLogs: FeedingLog[] = [
-          {
-            id: '1',
-            date: format(today, 'yyyy-MM-dd'),
-            feed_time: '08:00',
-            barn: 'barat',
-            note: 'Morning feeding',
-            user_id: '1'
-          },
-          {
-            id: '2',
-            date: format(today, 'yyyy-MM-dd'),
-            feed_time: '16:00',
-            barn: 'barat',
-            note: 'Afternoon feeding',
-            user_id: '1'
-          },
-          {
-            id: '3',
-            date: format(addMonths(today, 0), 'yyyy-MM-dd'),
-            feed_time: '09:00',
-            barn: 'timur',
-            note: 'Morning feeding',
-            user_id: '2'
-          }
-        ];
-        
-        setFeedingLogs(mockLogs);
+        toast.error('Failed to load feeding schedule data');
       } finally {
         setLoading(false);
       }
@@ -107,7 +73,7 @@ const FeedingSchedule: React.FC = () => {
     setFormData({
       date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
       feed_time: '',
-      barn: user?.role === 'admin' ? 'barat' : userBarn,
+      barn: user?.role === 'admin' ? 'barat' : (user?.role as BarnType) || 'barat',
       note: ''
     });
     setSelectedLog(null);
@@ -218,12 +184,11 @@ const FeedingSchedule: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-farm-dark">Feeding Schedule</h1>
           <p className="text-gray-600 mt-1">Manage your daily feeding activities</p>
-          {error && <p className="text-red-500 mt-2">{error}</p>}
         </div>
         
         <div className="mt-4 md:mt-0 flex gap-2">
           <Button
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            onClick={prevMonth}
             variant="outline"
             className="px-3"
           >
@@ -235,7 +200,7 @@ const FeedingSchedule: React.FC = () => {
             {format(currentMonth, 'MMMM yyyy')}
           </div>
           <Button
-            onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+            onClick={nextMonth}
             variant="outline"
             className="px-3"
           >
